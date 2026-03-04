@@ -45,6 +45,8 @@ uv run python -m bot
 | `DISCORD_REQUIRE_ROLE` | no | | If set, only members with this Discord role can use `/register` |
 | `USERMAP_PATH` | no | `data/usermap.json` | Path to the Discord ID to Kanidm Person UUID mapping file |
 | `ENABLE_POSIX` | no | `false` | Enable POSIX account attributes for new users |
+| `HEARTBEAT_URL` | no | | URL to GET periodically as an uptime heartbeat (disabled if unset) |
+| `HEARTBEAT_SECONDS` | no | `60` | Interval in seconds between heartbeat pings |
 
 Enabling POSIX attributes and having a POSIX password is required for the user to LDAP login
 

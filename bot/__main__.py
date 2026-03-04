@@ -28,10 +28,17 @@ class Bot(discord.Client):
         synced = await self.tree.sync()
         log.info("Synced %d command(s)", len(synced))
 
+        if self.settings.heartbeat_url:
+            from bot.cogs.heartbeat import Heartbeat
+
+            self._heartbeat = Heartbeat(self)
+
     async def on_ready(self) -> None:
         log.info("Logged in as %s (id=%s)", self.user, self.user.id)
 
     async def close(self) -> None:
+        if hasattr(self, "_heartbeat"):
+            await self._heartbeat.teardown()
         await self.kanidm.close()
         await super().close()
 
@@ -44,6 +51,14 @@ async def main() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    if settings.heartbeat_url:
+        heartbeat_host = settings.heartbeat_url.split("//")[-1].split("/")[0]
+
+        class _HeartbeatFilter(logging.Filter):
+            def filter(self, record: logging.LogRecord) -> bool:
+                return heartbeat_host not in record.getMessage()
+
+        logging.getLogger("httpx").addFilter(_HeartbeatFilter())
 
     bot = Bot(settings)
     await bot.start(settings.discord_token)

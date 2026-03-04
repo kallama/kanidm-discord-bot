@@ -14,6 +14,8 @@ class Settings:
     discord_require_role: str | None = None
     usermap_path: str = "data/usermap.json"
     enable_posix: bool = False
+    heartbeat_url: str | None = None
+    heartbeat_seconds: int = 60
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -31,4 +33,6 @@ class Settings:
             discord_require_role=os.environ.get("DISCORD_REQUIRE_ROLE") or None,
             usermap_path=os.environ.get("USERMAP_PATH", "data/usermap.json"),
             enable_posix=os.environ.get("ENABLE_POSIX", "").lower() == "true",
+            heartbeat_url=os.environ.get("HEARTBEAT_URL") or None,
+            heartbeat_seconds=int(os.environ.get("HEARTBEAT_SECONDS", "60")),
         )
