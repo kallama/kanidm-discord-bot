@@ -1,8 +1,7 @@
 services:
   kanidm-discord-bot:
-    build:
-      context: .
-      dockerfile: Containerfile
+    image: ghcr.io/kallama/kanidm-discord-bot:latest
+    container_name: kanidm-discord-bot
     env_file: .env
     volumes:
       - ./data:/app/data
