@@ -79,7 +79,7 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
 
         # Assign Discord role
         role_note = ""
-        if settings.discord_role:
+        if settings.discord_role and interaction.guild and isinstance(interaction.user, discord.Member):
             try:
                 role = discord.utils.get(interaction.guild.roles, name=settings.discord_role)
                 if role is None:
@@ -101,8 +101,10 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
         )
 
 
+@app_commands.guild_only()
 @app_commands.command(name="register", description="Register a new account")
 async def register(interaction: discord.Interaction[Bot]) -> None:
+    assert isinstance(interaction.user, discord.Member)
     required = interaction.client.settings.discord_require_role
     if required:
         role = discord.utils.get(interaction.user.roles, name=required)
