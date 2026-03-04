@@ -13,7 +13,7 @@ uv run python -m bot       # start the bot
 - `bot/__main__.py` — Entry point. Loads config, creates the Discord bot and Kanidm client, syncs slash commands on ready.
 - `bot/config.py` — `Settings` frozen dataclass loaded from env vars.
 - `bot/kanidm.py` — Async HTTP client wrapping the Kanidm REST API (httpx + Bearer auth).
-- `bot/usermap.py` — JSON-file-backed Discord ID to Kanidm username mapping (prevents duplicate registrations).
+- `bot/usermap.py` — JSON-file-backed Discord ID to Kanidm UUID mapping (prevents duplicate registrations).
 - `bot/cogs/register.py` — `/register` slash command that opens a modal, creates a Kanidm account, and assigns a Discord role.
 
 ## Environment variables

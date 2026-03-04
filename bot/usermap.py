@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 
 
 class UserMap:
-    """Persistent Discord ID -> Kanidm username mapping backed by a JSON file."""
+    """Persistent Discord ID -> Kanidm UUID mapping backed by a JSON file."""
 
     def __init__(self, path: str | Path) -> None:
         self._path = Path(path)
@@ -24,8 +24,8 @@ class UserMap:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         self._path.write_text(json.dumps(self._data, indent=2) + "\n")
 
-    def set(self, discord_id: int, username: str) -> None:
-        self._data[str(discord_id)] = username
+    def set(self, discord_id: int, uuid: str) -> None:
+        self._data[str(discord_id)] = uuid
         self._save()
 
     def get(self, discord_id: int) -> str | None:
