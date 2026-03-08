@@ -52,6 +52,12 @@ Enabling POSIX attributes and having a POSIX password is required for the user t
 
 ## Container
 
+The container runs as UID/GID 1000. Ensure the data directory exists and is writable:
+
+```bash
+mkdir -p data
+```
+
 ```bash
 docker build -t kanidm-discord-bot -f Containerfile .
 docker run --env-file .env -v ./data:/app/data kanidm-discord-bot

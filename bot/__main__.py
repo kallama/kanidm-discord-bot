@@ -4,6 +4,7 @@ import asyncio
 import logging
 
 import discord
+from discord.ext import tasks
 from dotenv import load_dotenv
 
 from bot.config import Settings
@@ -35,11 +36,20 @@ class Bot(discord.Client):
 
             self._heartbeat = Heartbeat(self)
 
+        self._health_touch.start()
+
     async def on_ready(self) -> None:
         assert self.user is not None
         log.info("Logged in as %s (id=%s)", self.user, self.user.id)
 
+    @tasks.loop(seconds=30)
+    async def _health_touch(self) -> None:
+        from pathlib import Path
+
+        Path("/tmp/healthy").touch()
+
     async def close(self) -> None:
+        self._health_touch.cancel()
         if hasattr(self, "_heartbeat"):
             await self._heartbeat.teardown()
         if hasattr(self, "usermap"):

@@ -13,6 +13,12 @@ RUN uv sync --frozen --no-dev
 
 COPY bot/ bot/
 
-VOLUME /app/data
+RUN groupadd --gid 1000 bot && \
+    useradd --uid 1000 --gid bot --no-create-home --shell /usr/sbin/nologin bot
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD ["python", "-c", "import os,time; assert time.time() - os.path.getmtime('/tmp/healthy') < 120"]
+
+USER 1000:1000
 
 CMD ["uv", "run", "python", "-m", "bot"]
