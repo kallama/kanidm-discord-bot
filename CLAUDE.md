@@ -47,8 +47,9 @@ podman run --env-file .env -v ./data:/app/data kanidm-discord-bot
 ## Releasing
 
 1. Bump `version` in `pyproject.toml` (CalVer: `YYYY.MM.patch`, e.g. `2026.03.2`)
-2. Commit: `git commit -am "release 2026.03.2"`
-3. Tag and push: `git tag v2026.03.2 && git push origin main --tags`
+2. Run `uv lock` to sync the lockfile
+3. Commit: `git commit -am "release 2026.03.2"`
+4. Tag and push: `git tag v2026.03.2 && git push origin main --tags`
 
 GitHub Actions (`.github/workflows/release.yaml`) then:
 - Validates the tag matches `pyproject.toml` version
