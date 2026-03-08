@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 class Heartbeat:
     def __init__(self, bot: Bot) -> None:
         self.bot = bot
-        self.url: str = bot.settings.heartbeat_url or ""
+        self.url: str = bot.settings.heartbeat_url  # type: ignore[assignment]
         self._client = httpx.AsyncClient(timeout=10)
         self.beat.change_interval(seconds=bot.settings.heartbeat_seconds)
         self.beat.start()
@@ -26,9 +26,6 @@ class Heartbeat:
 
     @tasks.loop()
     async def beat(self) -> None:
-        if not self.url:
-            log.debug("Heartbeat disabled; no URL configured")
-            return
         try:
             resp = await self._client.get(self.url)
             log.debug("Heartbeat %s → %d", self.url, resp.status_code)

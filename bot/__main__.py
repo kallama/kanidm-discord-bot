@@ -34,6 +34,7 @@ class Bot(discord.Client):
             self._heartbeat = Heartbeat(self)
 
     async def on_ready(self) -> None:
+        assert self.user is not None
         log.info("Logged in as %s (id=%s)", self.user, self.user.id)
 
     async def close(self) -> None:
@@ -61,7 +62,16 @@ async def main() -> None:
         logging.getLogger("httpx").addFilter(_HeartbeatFilter())
 
     bot = Bot(settings)
-    await bot.start(settings.discord_token)
+    try:
+        await bot.start(settings.discord_token)
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        pass
+    finally:
+        await bot.close()
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass

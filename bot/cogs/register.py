@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 import discord
 from discord import app_commands
@@ -12,6 +14,25 @@ if TYPE_CHECKING:
     from bot.__main__ import Bot
 
 log = logging.getLogger(__name__)
+
+# Matches Kanidm's INAME_RE from server/lib/src/value.rs
+INAME_RE = re.compile(r"^[a-z][a-z0-9\-_\.]{0,63}$")
+# Matches Kanidm's root and dn=token from server/lib/src/value.rs
+DISALLOWED_NAMES = frozenset({"root", "dn=token", "admin", "administrator", "system", "guest", "owner"})
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _is_valid_kanidm_name(name: str) -> bool:
+    if not INAME_RE.match(name):
+        return False
+    try:
+        UUID(name)
+        return False
+    except ValueError:
+        pass
+    return name not in DISALLOWED_NAMES
+
+_registering: set[int] = set()
 
 
 class RegisterModal(discord.ui.Modal, title="Register Account"):
@@ -43,10 +64,18 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
         settings = bot.settings
         kanidm = bot.kanidm
         usermap = bot.usermap
+        user_id = interaction.user.id
 
-        if usermap.has(interaction.user.id):
+        if usermap.has(user_id):
             await interaction.followup.send(
                 "You already have an account.",
+                ephemeral=True,
+            )
+            return
+
+        if user_id in _registering:
+            await interaction.followup.send(
+                "Registration already in progress.",
                 ephemeral=True,
             )
             return
@@ -55,9 +84,24 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
         email = str(self.email).strip().lower()
         display_name = f"{self.first_name} {self.last_name}".strip()
 
+        if not _is_valid_kanidm_name(username):
+            await interaction.followup.send(
+                "Invalid username. Use lowercase letters, numbers, dots, hyphens, "
+                "or underscores. Must start with a letter.",
+                ephemeral=True,
+            )
+            return
+
+        if not EMAIL_RE.match(email):
+            await interaction.followup.send(
+                "Invalid email address.",
+                ephemeral=True,
+            )
+            return
+
+        _registering.add(user_id)
         try:
             uuid = await kanidm.create_person(username, display_name, email)
-            usermap.set(interaction.user.id, uuid)
             if settings.enable_posix:
                 await kanidm.posix_enable_person(uuid)
             if settings.kanidm_group:
@@ -70,6 +114,10 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
                 ephemeral=True,
             )
             return
+        finally:
+            _registering.discard(user_id)
+
+        usermap.set(user_id, uuid)
 
         reset_url = f"{settings.kanidm_url}/ui/reset?token={token}"
         if settings.enable_posix:

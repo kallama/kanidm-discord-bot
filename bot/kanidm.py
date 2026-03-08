@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import logging
+from types import TracebackType
+from typing import Any
+
 import httpx
+
+log = logging.getLogger(__name__)
 
 
 class KanidmError(Exception):
@@ -15,18 +21,31 @@ class KanidmClient:
         self._client = httpx.AsyncClient(
             base_url=base_url,
             headers={"Authorization": f"Bearer {token}"},
+            timeout=30,
         )
 
     async def close(self) -> None:
         await self._client.aclose()
+
+    async def __aenter__(self) -> KanidmClient:
+        return self
+
+    async def __aexit__(
+        self,
+        _exc_type: type[BaseException] | None,
+        _exc_val: BaseException | None,
+        _exc_tb: TracebackType | None,
+    ) -> None:
+        await self.close()
 
     async def _request(
         self,
         method: str,
         path: str,
         *,
-        json: object = None,
+        json: dict[str, Any] | list[str] | None = None,
     ) -> httpx.Response:
+        log.info("%s %s", method, path)
         resp = await self._client.request(method, path, json=json)
         if not resp.is_success:
             detail = resp.text or resp.reason_phrase
