@@ -1,35 +1,60 @@
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 
+import aiosqlite
+
 log = logging.getLogger(__name__)
+
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS usermap (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kanidm_uuid TEXT NOT NULL UNIQUE,
+    discord_id TEXT NOT NULL UNIQUE
+)
+"""
 
 
 class UserMap:
-    """Persistent Discord ID -> Kanidm UUID mapping backed by a JSON file."""
+    """Persistent Discord ID -> Kanidm UUID mapping backed by SQLite."""
 
-    def __init__(self, path: str | Path) -> None:
-        self._path = Path(path)
-        self._data: dict[str, str] = {}
-        self._load()
+    def __init__(self, db: aiosqlite.Connection) -> None:
+        self._db = db
 
-    def _load(self) -> None:
-        if self._path.exists():
-            self._data = json.loads(self._path.read_text())
-            log.info("Loaded %d user mapping(s) from %s", len(self._data), self._path)
+    @classmethod
+    async def connect(cls, path: str | Path) -> UserMap:
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        db = await aiosqlite.connect(path)
+        await db.execute(_SCHEMA)
+        await db.commit()
+        async with db.execute("SELECT COUNT(*) FROM usermap") as cursor:
+            row = await cursor.fetchone()
+        log.info("Opened usermap at %s (%d mapping(s))", path, row[0] if row else 0)
+        return cls(db)
 
-    def _save(self) -> None:
-        self._path.parent.mkdir(parents=True, exist_ok=True)
-        self._path.write_text(json.dumps(self._data, indent=2) + "\n")
+    async def close(self) -> None:
+        await self._db.close()
 
-    def set(self, discord_id: int, uuid: str) -> None:
-        self._data[str(discord_id)] = uuid
-        self._save()
+    async def set(self, discord_id: int, uuid: str) -> None:
+        await self._db.execute(
+            "INSERT INTO usermap (discord_id, kanidm_uuid) VALUES (?, ?)",
+            (str(discord_id), uuid),
+        )
+        await self._db.commit()
 
-    def get(self, discord_id: int) -> str | None:
-        return self._data.get(str(discord_id))
+    async def get(self, discord_id: int) -> str | None:
+        async with self._db.execute(
+            "SELECT kanidm_uuid FROM usermap WHERE discord_id = ?",
+            (str(discord_id),),
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else None
 
-    def has(self, discord_id: int) -> bool:
-        return str(discord_id) in self._data
+    async def has(self, discord_id: int) -> bool:
+        async with self._db.execute(
+            "SELECT 1 FROM usermap WHERE discord_id = ?",
+            (str(discord_id),),
+        ) as cursor:
+            return await cursor.fetchone() is not None

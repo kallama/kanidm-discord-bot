@@ -14,7 +14,7 @@ This was vibe-coded with Claude Opus 4.6 as a personal project.
 4. The user receives a credential reset link to set up their passkey, and UNIX password if ENABLE_POSIX is true
 5. Discord role DISCORD_ROLE is assigned to the user if set
 
-Each Discord account can only register once — a local mapping file prevents duplicates. I don't like the idea of a mapping file or sqlite db, but don't see a current way to store the users Discord ID as a Kanidm attribute
+Each Discord account can only register once — a local SQLite database prevents duplicates. I don't like the idea of a mapping file or sqlite db, but don't see a current way to store the users Discord ID as a Kanidm attribute
 
 ## Setup
 
@@ -43,7 +43,7 @@ uv run python -m bot
 | `KANIDM_GROUP` | no | | Kanidm group to add new users to (skipped if unset) |
 | `DISCORD_ROLE` | no | | Discord role to assign after registration (skipped if unset) |
 | `DISCORD_REQUIRE_ROLE` | no | | If set, only members with this Discord role can use `/register` |
-| `USERMAP_PATH` | no | `data/usermap.json` | Path to the Discord ID to Kanidm Person UUID mapping file |
+| `DB_PATH` | no | `data/bot.db` | Path to SQLite database for Discord ID → Kanidm UUID mappings |
 | `ENABLE_POSIX` | no | `false` | Enable POSIX account attributes for new users |
 | `HEARTBEAT_URL` | no | | URL to GET periodically as an uptime heartbeat (disabled if unset) |
 | `HEARTBEAT_SECONDS` | no | `60` | Interval in seconds between heartbeat pings |
@@ -56,15 +56,14 @@ Enabling POSIX attributes and having a POSIX password is required for the user t
 docker build -t kanidm-discord-bot -f Containerfile .
 docker run --env-file .env -v ./data:/app/data kanidm-discord-bot
 ```
-
-Or with Podman:
-
 ```bash
 podman build -t kanidm-discord-bot -f Containerfile .
 podman run --env-file .env -v ./data:/app/data kanidm-discord-bot
 ```
 
-The `-v ./data:/app/data` bind mount persists the usermap file across container restarts. Or use `compose.yaml`:
+The `-v ./data:/app/data` bind mount persists the database across container restarts.
+
+### Docker Compose
 
 ```bash
 docker compose up -d
@@ -79,5 +78,6 @@ bot/
 ├── kanidm.py        # Async Kanidm REST API client
 ├── usermap.py       # Discord ID → Kanidm Person UUID mapping
 └── cogs/
+    ├── heartbeat.py # Periodic uptime heartbeat pings
     └── register.py  # /register slash command and modal
 ```

@@ -13,7 +13,8 @@ uv run python -m bot       # start the bot
 - `bot/__main__.py` — Entry point. Loads config, creates the Discord bot and Kanidm client, syncs slash commands on ready.
 - `bot/config.py` — `Settings` frozen dataclass loaded from env vars.
 - `bot/kanidm.py` — Async HTTP client wrapping the Kanidm REST API (httpx + Bearer auth).
-- `bot/usermap.py` — JSON-file-backed Discord ID to Kanidm UUID mapping (prevents duplicate registrations).
+- `bot/usermap.py` — SQLite-backed Discord ID to Kanidm UUID mapping (prevents duplicate registrations).
+- `bot/cogs/heartbeat.py` — Periodic uptime heartbeat pings.
 - `bot/cogs/register.py` — `/register` slash command that opens a modal, creates a Kanidm account, and assigns a Discord role.
 
 ## Environment variables
@@ -26,7 +27,7 @@ uv run python -m bot       # start the bot
 | `KANIDM_GROUP` | no | | Kanidm group to add new users to (skipped if unset) |
 | `DISCORD_ROLE` | no | | Discord role to assign after registration (skipped if unset) |
 | `DISCORD_REQUIRE_ROLE` | no | | If set, only members with this Discord role can use `/register` |
-| `USERMAP_PATH` | no | `data/usermap.json` | Path to Discord ID → Kanidm username mapping file |
+| `DB_PATH` | no | `data/bot.db` | Path to SQLite database for Discord ID → Kanidm UUID mappings |
 | `ENABLE_POSIX` | no | `false` | Enable POSIX account attributes for new users |
 | `HEARTBEAT_URL` | no | | URL to GET periodically as an uptime heartbeat (disabled if unset) |
 | `HEARTBEAT_SECONDS` | no | `60` | Interval in seconds between heartbeat pings |
@@ -46,10 +47,10 @@ podman run --env-file .env -v ./data:/app/data kanidm-discord-bot
 
 ## Releasing
 
-1. Bump `version` in `pyproject.toml` (CalVer: `YYYY.MM.patch`, e.g. `2026.03.2`)
+1. Bump `version` in `pyproject.toml` (CalVer: `YYYY.MM.patch`, e.g. `2026.03.1`)
 2. Run `uv lock` to sync the lockfile
-3. Commit: `git commit -am "release 2026.03.2"`
-4. Tag and push: `git tag v2026.03.2 && git push origin main --tags`
+3. Commit: `git commit -am "release 2026.03.1"`
+4. Tag and push: `git tag v2026.03.1 && git push origin main --tags`
 
 GitHub Actions (`.github/workflows/release.yaml`) then:
 - Validates the tag matches `pyproject.toml` version
@@ -64,6 +65,6 @@ The bot could be rewritten as a Cloudflare Worker for serverless/zero-ops hostin
 
 - Requires a TypeScript rewrite (Workers don't run Python)
 - Switch from Discord gateway (WebSocket) to the HTTP interactions model
-- Usermap storage moves from local JSON file to Cloudflare KV
+- Usermap storage moves from local SQLite to Cloudflare KV
 - Ed25519 signature verification required for incoming interactions
 - Free tier covers 100k requests/day with KV included

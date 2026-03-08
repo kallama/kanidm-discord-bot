@@ -66,7 +66,7 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
         usermap = bot.usermap
         user_id = interaction.user.id
 
-        if usermap.has(user_id):
+        if await usermap.has(user_id):
             await interaction.followup.send(
                 "You already have an account.",
                 ephemeral=True,
@@ -117,7 +117,7 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
         finally:
             _registering.discard(user_id)
 
-        usermap.set(user_id, uuid)
+        await usermap.set(user_id, uuid)
 
         reset_url = f"{settings.kanidm_url}/ui/reset?token={token}"
         if settings.enable_posix:
@@ -153,7 +153,7 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
 @app_commands.command(name="register", description="Register a new account")
 async def register(interaction: discord.Interaction[Bot]) -> None:
     assert isinstance(interaction.user, discord.Member)
-    if interaction.client.usermap.has(interaction.user.id):
+    if await interaction.client.usermap.has(interaction.user.id):
         await interaction.response.send_message(
             "You already have an account.",
             ephemeral=True,

@@ -12,7 +12,7 @@ class Settings:
     kanidm_group: str | None = None
     discord_role: str | None = None
     discord_require_role: str | None = None
-    usermap_path: str = "data/usermap.json"
+    db_path: str = "data/bot.db"
     enable_posix: bool = False
     heartbeat_url: str | None = None
     heartbeat_seconds: int = 60
@@ -31,7 +31,7 @@ class Settings:
             kanidm_group=os.environ.get("KANIDM_GROUP") or None,
             discord_role=os.environ.get("DISCORD_ROLE") or None,
             discord_require_role=os.environ.get("DISCORD_REQUIRE_ROLE") or None,
-            usermap_path=os.environ.get("USERMAP_PATH", "data/usermap.json"),
+            db_path=os.environ.get("DB_PATH", "data/bot.db"),
             enable_posix=os.environ.get("ENABLE_POSIX", "").lower() == "true",
             heartbeat_url=os.environ.get("HEARTBEAT_URL") or None,
             heartbeat_seconds=int(os.environ.get("HEARTBEAT_SECONDS", "60")),

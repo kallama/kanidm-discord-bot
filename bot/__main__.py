@@ -19,9 +19,11 @@ class Bot(discord.Client):
         self.tree = discord.app_commands.CommandTree(self)
         self.settings = settings
         self.kanidm = KanidmClient(settings.kanidm_url, settings.kanidm_token)
-        self.usermap = UserMap(settings.usermap_path)
+        self.usermap: UserMap  # initialized in setup_hook
 
     async def setup_hook(self) -> None:
+        self.usermap = await UserMap.connect(self.settings.db_path)
+
         from bot.cogs.register import register
 
         self.tree.add_command(register)
@@ -40,6 +42,8 @@ class Bot(discord.Client):
     async def close(self) -> None:
         if hasattr(self, "_heartbeat"):
             await self._heartbeat.teardown()
+        if hasattr(self, "usermap"):
+            await self.usermap.close()
         await self.kanidm.close()
         await super().close()
 
