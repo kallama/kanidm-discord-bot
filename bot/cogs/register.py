@@ -153,6 +153,12 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
 @app_commands.command(name="register", description="Register a new account")
 async def register(interaction: discord.Interaction[Bot]) -> None:
     assert isinstance(interaction.user, discord.Member)
+    if interaction.client.usermap.has(interaction.user.id):
+        await interaction.response.send_message(
+            "You already have an account.",
+            ephemeral=True,
+        )
+        return
     required = interaction.client.settings.discord_require_role
     if required:
         role = discord.utils.get(interaction.user.roles, name=required)
