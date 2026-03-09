@@ -17,8 +17,8 @@ RUN groupadd --gid 1000 bot && \
     useradd --uid 1000 --gid bot --no-create-home --shell /usr/sbin/nologin bot
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD ["python", "-c", "import os,time; assert time.time() - os.path.getmtime('/tmp/healthy') < 120"]
+  CMD [".venv/bin/python", "-c", "import os,time; assert time.time() - os.path.getmtime('/tmp/healthy') < 120"]
 
 USER 1000:1000
 
-CMD ["uv", "run", "python", "-m", "bot"]
+CMD [".venv/bin/python", "-m", "bot"]
