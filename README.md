@@ -52,7 +52,12 @@ Enabling POSIX attributes and having a POSIX password is required for the user t
 
 ## Container
 
-The container runs as UID/GID 1000.
+The container defaults to UID/GID 1000. To override, set `BOT_UID` and `BOT_GID` in your `.env` file:
+
+```
+BOT_UID=1001
+BOT_GID=1001
+```
 
 ### Docker Compose (recommended)
 
@@ -72,10 +77,16 @@ docker run --env-file .env -v bot-data:/app/data ghcr.io/kallama/kanidm-discord-
 
 ### Using a bind mount
 
-If you prefer a bind mount to keep the database on the host filesystem, ensure the data directory exists and is writable by UID/GID 1000:
+If you prefer a bind mount to keep the database on the host filesystem, ensure the data directory exists and is writable by the configured UID/GID (default 1000):
 
 ```bash
 mkdir -p data && chown 1000:1000 data
+```
+
+If using custom `BOT_UID`/`BOT_GID`, match the ownership:
+
+```bash
+mkdir -p data && chown $BOT_UID:$BOT_GID data
 ```
 
 Then override the volume in your run command:

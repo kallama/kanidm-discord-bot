@@ -2,6 +2,7 @@ services:
   kanidm-discord-bot:
     image: ghcr.io/kallama/kanidm-discord-bot:latest
     container_name: kanidm-discord-bot
+    user: "${BOT_UID:-1000}:${BOT_GID:-1000}"
     env_file: .env
     volumes:
       - bot-data:/app/data
