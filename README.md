@@ -52,27 +52,49 @@ Enabling POSIX attributes and having a POSIX password is required for the user t
 
 ## Container
 
-The container runs as UID/GID 1000. Ensure the data directory exists and is writable:
+The container runs as UID/GID 1000.
 
-```bash
-mkdir -p data
-```
+### Docker Compose (recommended)
 
-```bash
-docker build -t kanidm-discord-bot -f Containerfile .
-docker run --env-file .env -v ./data:/app/data kanidm-discord-bot
-```
-```bash
-podman build -t kanidm-discord-bot -f Containerfile .
-podman run --env-file .env -v ./data:/app/data kanidm-discord-bot
-```
-
-The `-v ./data:/app/data` bind mount persists the database across container restarts.
-
-### Docker Compose
+By default, `compose.yaml` uses a named volume (`bot-data`) which is managed by Docker/Podman automatically — no extra setup needed:
 
 ```bash
 docker compose up -d
+```
+
+### Standalone container
+
+Using a named volume:
+
+```bash
+docker run --env-file .env -v bot-data:/app/data ghcr.io/kallama/kanidm-discord-bot:latest
+```
+
+### Using a bind mount
+
+If you prefer a bind mount to keep the database on the host filesystem, ensure the data directory exists and is writable by UID/GID 1000:
+
+```bash
+mkdir -p data && chown 1000:1000 data
+```
+
+Then override the volume in your run command:
+
+```bash
+docker run --env-file .env -v ./data:/app/data ghcr.io/kallama/kanidm-discord-bot:latest
+```
+
+Or in `compose.yaml`, replace the volumes section:
+
+```yaml
+    volumes:
+      - ./data:/app/data
+```
+
+### Building from source
+
+```bash
+docker build -t kanidm-discord-bot -f Containerfile .
 ```
 
 ## Project structure
