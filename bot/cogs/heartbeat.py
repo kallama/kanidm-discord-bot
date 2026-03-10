@@ -17,6 +17,7 @@ class Heartbeat:
         self.bot = bot
         self.url: str = bot.settings.heartbeat_url  # type: ignore[assignment]
         self._client = httpx.AsyncClient(timeout=10)
+        self._consecutive_failures = 0
         self.beat.change_interval(seconds=bot.settings.heartbeat_seconds)
         self.beat.start()
 
@@ -29,8 +30,15 @@ class Heartbeat:
         try:
             resp = await self._client.get(self.url)
             log.debug("Heartbeat %s → %d", self.url, resp.status_code)
-        except Exception:
-            log.warning("Heartbeat failed", exc_info=True)
+            if self._consecutive_failures:
+                log.info("Heartbeat recovered after %d failures", self._consecutive_failures)
+            self._consecutive_failures = 0
+        except Exception as exc:
+            self._consecutive_failures += 1
+            if self._consecutive_failures <= 3:
+                log.warning("Heartbeat failed (%d): %s", self._consecutive_failures, exc)
+            else:
+                log.warning("Heartbeat still failing (%d consecutive)", self._consecutive_failures)
 
     @beat.before_loop
     async def before_beat(self) -> None:
