@@ -108,6 +108,10 @@ Or in `compose.yaml`, replace the volumes section:
 docker build -t kanidm-discord-bot -f Containerfile .
 ```
 
+```bash
+docker compose up --build
+```
+
 ## Project structure
 
 ```
