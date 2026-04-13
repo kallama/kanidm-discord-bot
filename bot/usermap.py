@@ -52,6 +52,11 @@ class UserMap:
             row = await cursor.fetchone()
             return row[0] if row else None
 
+    async def count(self) -> int:
+        async with self._db.execute("SELECT COUNT(*) FROM usermap") as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else 0
+
     async def has(self, discord_id: int) -> bool:
         async with self._db.execute(
             "SELECT 1 FROM usermap WHERE discord_id = ?",

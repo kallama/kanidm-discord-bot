@@ -38,9 +38,18 @@ class Bot(discord.Client):
 
         self._health_touch.start()
 
+    async def update_status(self) -> None:
+        count = await self.usermap.count()
+        activity = discord.Activity(
+            type=discord.ActivityType.watching,
+            name=f"{count} registered user{'s' if count != 1 else ''}",
+        )
+        await self.change_presence(activity=activity)
+
     async def on_ready(self) -> None:
         assert self.user is not None
         log.info("Logged in as %s (id=%s)", self.user, self.user.id)
+        await self.update_status()
 
     @tasks.loop(seconds=30)
     async def _health_touch(self) -> None:

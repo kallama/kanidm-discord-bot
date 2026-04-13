@@ -118,6 +118,7 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
             _registering.discard(user_id)
 
         await usermap.set(user_id, uuid)
+        await bot.update_status()
 
         reset_url = f"{settings.kanidm_url}/ui/reset?token={token}"
         if settings.enable_posix:
