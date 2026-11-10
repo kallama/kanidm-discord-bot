@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from types import TracebackType
-from typing import Any
+from typing import Any, Self
 
 import httpx
 
@@ -27,7 +27,7 @@ class KanidmClient:
     async def close(self) -> None:
         await self._client.aclose()
 
-    async def __aenter__(self) -> KanidmClient:
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(
@@ -70,8 +70,27 @@ class KanidmClient:
                 }
             },
         )
-        resp = await self._request("GET", f"/v1/person/{username}")
-        return resp.json()["attrs"]["uuid"][0]
+        try:
+            resp = await self._request("GET", f"/v1/person/{username}")
+            return resp.json()["attrs"]["uuid"][0]
+        except Exception:
+            # The account exists but we couldn't learn its UUID; don't leave it orphaned.
+            await self.delete_person_quietly(username)
+            raise
+
+    async def delete_person(self, id_: str) -> None:
+        """Delete a person by UUID or name."""
+        await self._request("DELETE", f"/v1/person/{id_}")
+
+    async def delete_person_quietly(self, id_: str) -> bool:
+        """Best-effort delete used to roll back a failed registration."""
+        try:
+            await self.delete_person(id_)
+        except Exception:
+            log.exception("Rollback failed: person %s must be deleted from Kanidm manually", id_)
+            return False
+        log.info("Rolled back person %s", id_)
+        return True
 
     async def posix_enable_person(self, uuid: str) -> None:
         await self._request("POST", f"/v1/person/{uuid}/_unix", json={})

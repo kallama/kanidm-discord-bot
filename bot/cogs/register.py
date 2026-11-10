@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -31,6 +32,20 @@ def _is_valid_kanidm_name(name: str) -> bool:
     except ValueError:
         pass
     return name not in DISALLOWED_NAMES
+
+
+def _find_role(roles: Sequence[discord.Role], spec: str) -> discord.Role | None:
+    """Look up a role by ID if `spec` is numeric, otherwise by name."""
+    if spec.isdigit():
+        return discord.utils.get(roles, id=int(spec))
+    return discord.utils.get(roles, name=spec)
+
+
+def _failure_message(exc: Exception) -> str:
+    if isinstance(exc, KanidmError) and exc.status_code == 409:
+        return "Registration failed: that username or email is already taken."
+    return "Registration failed. Please try again later or contact an admin."
+
 
 _registering: set[int] = set()
 
@@ -99,7 +114,10 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
             )
             return
 
+        # The guard is held until the mapping is stored, so a second submission
+        # can't slip in between account creation and usermap.set.
         _registering.add(user_id)
+        uuid: str | None = None
         try:
             uuid = await kanidm.create_person(username, display_name, email)
             if settings.enable_posix:
@@ -107,18 +125,24 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
             if settings.kanidm_group:
                 await kanidm.add_to_group(settings.kanidm_group, uuid)
             token = await kanidm.create_credential_reset_token(uuid)
-        except KanidmError as exc:
-            log.error("Kanidm error during registration of %s: %s", username, exc)
-            await interaction.followup.send(
-                f"Registration failed: {exc.detail}",
-                ephemeral=True,
-            )
+            await usermap.set(user_id, uuid)
+        except Exception as exc:
+            if isinstance(exc, KanidmError):
+                log.error("Kanidm error during registration of %s: %s", username, exc)
+            else:
+                log.exception("Unexpected error during registration of %s", username)
+            # Roll back so the user can retry with the same username.
+            if uuid is not None:
+                await kanidm.delete_person_quietly(uuid)
+            await interaction.followup.send(_failure_message(exc), ephemeral=True)
             return
         finally:
             _registering.discard(user_id)
 
-        await usermap.set(user_id, uuid)
-        await bot.update_status()
+        try:
+            await bot.update_status()
+        except Exception:
+            log.exception("Failed to update presence")
 
         reset_url = f"{settings.kanidm_url}/ui/reset?token={token}"
         if settings.enable_posix:
@@ -130,7 +154,7 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
         role_note = ""
         if settings.discord_role and interaction.guild and isinstance(interaction.user, discord.Member):
             try:
-                role = discord.utils.get(interaction.guild.roles, name=settings.discord_role)
+                role = _find_role(interaction.guild.roles, settings.discord_role)
                 if role is None:
                     role_note = f"\n\n⚠ Could not find Discord role `{settings.discord_role}`."
                 else:
@@ -143,9 +167,7 @@ class RegisterModal(discord.ui.Modal, title="Register Account"):
                 )
 
         await interaction.followup.send(
-            f"Account **{username}** created!\n\n"
-            f"{reset_msg}"
-            f"{role_note}",
+            f"Account **{username}** created!\n\n{reset_msg}{role_note}",
             ephemeral=True,
         )
 
@@ -162,10 +184,11 @@ async def register(interaction: discord.Interaction[Bot]) -> None:
         return
     required = interaction.client.settings.discord_require_role
     if required:
-        role = discord.utils.get(interaction.user.roles, name=required)
+        role = _find_role(interaction.user.roles, required)
         if role is None:
+            role_label = f"<@&{required}>" if required.isdigit() else f"`{required}`"
             await interaction.response.send_message(
-                f"You need the `{required}` role to register.",
+                f"You need the {role_label} role to register.",
                 ephemeral=True,
             )
             return

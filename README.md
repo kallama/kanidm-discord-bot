@@ -4,7 +4,7 @@ A Discord bot that lets users self-register [Kanidm](https://kanidm.com) account
 
 ## Vibe-Code Warning
 
-This was vibe-coded with Claude Opus 4.6 as a personal project.
+This was vibe-coded with Claude.
 
 ## What it does
 
@@ -41,8 +41,8 @@ uv run python -m bot
 | `KANIDM_URL` | yes | | Kanidm base URL (e.g. `https://idm.example.com`) |
 | `KANIDM_TOKEN` | yes | | Kanidm service account Bearer token |
 | `KANIDM_GROUP` | no | | Kanidm group to add new users to (skipped if unset) |
-| `DISCORD_ROLE` | no | | Discord role to assign after registration (skipped if unset) |
-| `DISCORD_REQUIRE_ROLE` | no | | If set, only members with this Discord role can use `/register` |
+| `DISCORD_ROLE` | no | | Discord role (name or ID) to assign after registration (skipped if unset) |
+| `DISCORD_REQUIRE_ROLE` | no | | If set, only members with this Discord role (name or ID) can use `/register` |
 | `DB_PATH` | no | `data/bot.db` | Path to SQLite database for Discord ID → Kanidm UUID mappings |
 | `ENABLE_POSIX` | no | `false` | Enable POSIX account attributes for new users |
 | `HEARTBEAT_URL` | no | | URL to GET periodically as an uptime heartbeat (disabled if unset) |

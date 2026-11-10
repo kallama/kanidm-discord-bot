@@ -27,8 +27,13 @@ class Heartbeat:
 
     @tasks.loop()
     async def beat(self) -> None:
+        if not self.bot.is_ready():
+            # Gateway is down; let the monitor notice the missed beats.
+            return
         try:
             resp = await self._client.get(self.url)
+            if resp.is_error:
+                raise RuntimeError(f"HTTP {resp.status_code}")
             log.debug("Heartbeat %s → %d", self.url, resp.status_code)
             if self._consecutive_failures:
                 log.info("Heartbeat recovered after %d failures", self._consecutive_failures)

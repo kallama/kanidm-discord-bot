@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from pathlib import Path
 
 import discord
 from discord.ext import tasks
@@ -53,9 +54,9 @@ class Bot(discord.Client):
 
     @tasks.loop(seconds=30)
     async def _health_touch(self) -> None:
-        from pathlib import Path
-
-        Path("/tmp/healthy").touch()
+        # Only report healthy while connected to the Discord gateway.
+        if self.is_ready():
+            Path("/tmp/healthy").touch()
 
     async def close(self) -> None:
         self._health_touch.cancel()

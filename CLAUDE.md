@@ -25,8 +25,8 @@ uv run python -m bot       # start the bot
 | `KANIDM_URL` | yes | | Kanidm base URL (e.g. `https://idm.example.com`) |
 | `KANIDM_TOKEN` | yes | | Kanidm service account Bearer token |
 | `KANIDM_GROUP` | no | | Kanidm group to add new users to (skipped if unset) |
-| `DISCORD_ROLE` | no | | Discord role to assign after registration (skipped if unset) |
-| `DISCORD_REQUIRE_ROLE` | no | | If set, only members with this Discord role can use `/register` |
+| `DISCORD_ROLE` | no | | Discord role (name or ID) to assign after registration (skipped if unset) |
+| `DISCORD_REQUIRE_ROLE` | no | | If set, only members with this Discord role (name or ID) can use `/register` |
 | `DB_PATH` | no | `data/bot.db` | Path to SQLite database for Discord ID → Kanidm UUID mappings |
 | `ENABLE_POSIX` | no | `false` | Enable POSIX account attributes for new users |
 | `HEARTBEAT_URL` | no | | URL to GET periodically as an uptime heartbeat (disabled if unset) |
@@ -53,10 +53,12 @@ podman run --env-file .env -v ./data:/app/data kanidm-discord-bot
 
 ## Releasing
 
-1. Bump `version` in `pyproject.toml` (CalVer: `YYYY.MM.patch`, e.g. `2026.03.1`)
-2. Run `uv lock` to sync the lockfile
-3. Commit: `git commit -am "release 2026.03.1"`
-4. Tag and push: `git tag v2026.03.1 && git push origin main --tags`
+Run `./release.sh` from a clean, up-to-date `main`. It:
+
+1. Refuses to run if the tree is dirty, the branch isn't `main`, `main` is behind `origin`, or `uv.lock` is stale
+2. Runs `ruff check`, `ruff format --check`, and `pytest`
+3. Bumps `version` in `pyproject.toml` (CalVer: `YYYY.MM.patch`; patch restarts at `0` each month, e.g. `2026.03.0`) and runs `uv lock`
+4. Commits only `pyproject.toml` and `uv.lock` as `release <version>`, tags `<version>` (no `v` prefix), and pushes `main` plus that tag atomically
 
 GitHub Actions (`.github/workflows/release.yaml`) then:
 - Validates the tag matches `pyproject.toml` version

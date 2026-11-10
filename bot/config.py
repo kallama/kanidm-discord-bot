@@ -24,6 +24,14 @@ class Settings:
         if missing:
             raise SystemExit(f"Missing required env vars: {', '.join(missing)}")
 
+        raw_seconds = os.environ.get("HEARTBEAT_SECONDS") or "60"
+        try:
+            heartbeat_seconds = int(raw_seconds)
+        except ValueError:
+            heartbeat_seconds = 0
+        if heartbeat_seconds <= 0:
+            raise SystemExit(f"HEARTBEAT_SECONDS must be a positive integer, got {raw_seconds!r}")
+
         return cls(
             discord_token=os.environ["DISCORD_TOKEN"],
             kanidm_url=os.environ["KANIDM_URL"].rstrip("/"),
@@ -34,5 +42,5 @@ class Settings:
             db_path=os.environ.get("DB_PATH", "data/bot.db"),
             enable_posix=os.environ.get("ENABLE_POSIX", "").lower() == "true",
             heartbeat_url=os.environ.get("HEARTBEAT_URL") or None,
-            heartbeat_seconds=int(os.environ.get("HEARTBEAT_SECONDS", "60")),
+            heartbeat_seconds=heartbeat_seconds,
         )

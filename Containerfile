@@ -4,14 +4,14 @@ FROM python:3.14.3-alpine3.23
 LABEL org.opencontainers.image.source="https://github.com/kallama/kanidm-discord-bot"
 LABEL org.opencontainers.image.description="Discord bot for Kanidm user registration"
 
-COPY --from=uv /uv /usr/local/bin/uv
-
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN --mount=type=bind,from=uv,source=/uv,target=/usr/local/bin/uv \
+    uv sync --frozen --no-dev --compile-bytecode
 
 COPY bot/ bot/
+RUN .venv/bin/python -m compileall -q bot
 
 RUN addgroup -g 1000 bot && \
     adduser -u 1000 -G bot -D -H -s /sbin/nologin bot && \
