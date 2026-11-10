@@ -88,7 +88,7 @@ async def main() -> None:
     bot = Bot(settings)
     try:
         await bot.start(settings.discord_token)
-    except (KeyboardInterrupt, asyncio.CancelledError):
+    except KeyboardInterrupt, asyncio.CancelledError:
         pass
     finally:
         await bot.close()

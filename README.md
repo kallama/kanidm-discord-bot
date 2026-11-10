@@ -20,7 +20,7 @@ Each Discord account can only register once — a local SQLite database prevents
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.14+
 - [uv](https://docs.astral.sh/uv/)
 - A Kanidm instance with a service account token (the account must be a member of `idm_people_admins`, `idm_group_admins`, and `idm_unix_admins` at minimum)
 - A Discord bot token with the `applications.commands` and `guilds.members` scopes

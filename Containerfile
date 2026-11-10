@@ -1,5 +1,5 @@
-FROM ghcr.io/astral-sh/uv:0.10.9 AS uv
-FROM python:3.14.3-alpine3.23
+FROM ghcr.io/astral-sh/uv:0.13.7 AS uv
+FROM python:3.14.10-alpine3.24
 
 LABEL org.opencontainers.image.source="https://github.com/kallama/kanidm-discord-bot"
 LABEL org.opencontainers.image.description="Discord bot for Kanidm user registration"
